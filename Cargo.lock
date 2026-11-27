@@ -379,7 +379,7 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pkr-band-bridge"
-version = "1.2.3"
+version = "1.4.2"
 dependencies = [
  "flate2",
  "lz4_flex",

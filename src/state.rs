@@ -117,6 +117,97 @@ pub struct PluginState {
     pub cmd_seq: u64,
     /// 手表独立通道推来的实时图集进度（最新一条）。
     pub live: Option<LiveStatus>,
+    /// 在线榜缓存（Upstash），由定时任务刷新；UI 只读，绝不阻塞渲染。
+    pub cloud_classic: Vec<crate::scores::ScoreEntry>,
+    pub cloud_endless: Vec<crate::scores::ScoreEntry>,
+    pub cloud_fastest: Vec<crate::scores::ScoreEntry>,
+    /// 上次在线榜刷新时刻（unix ms）。0 表示立即需要刷新。
+    pub cloud_ms: u128,
+    pub cloud_err: Option<String>,
+    /// 上次自动让手表补传积压成绩（score-flush）的时刻，unix ms；0 表示还没跑过。
+    pub auto_flush_ms: u128,
+    /// 昵称输入框里正在编辑的文字（未落盘）。保存时写进 scores 的昵称文件。
+    pub nick_draft: String,
+    /// 排行榜分榜视图：0 在线 / 1 本机。
+    pub board_source: u8,
+    /// 榜种：0 经典最高层 / 1 无尽最高层 / 2 最快通关。
+    pub board_kind: u8,
+    /// 正在编辑昵称：编辑期间整页停止重渲染，避免重建输入框打断中文输入法。
+    pub nick_editing: bool,
+}
+
+pub fn nick_editing() -> bool {
+    with_state(|s| s.nick_editing)
+}
+
+pub fn set_nick_editing(on: bool) {
+    with_state(|s| s.nick_editing = on);
+}
+
+pub fn board_view() -> (u8, u8) {
+    with_state(|s| (s.board_source, s.board_kind))
+}
+
+pub fn set_board_view(source: Option<u8>, kind: Option<u8>) {
+    with_state(|s| {
+        if let Some(v) = source {
+            s.board_source = v.min(1);
+        }
+        if let Some(v) = kind {
+            s.board_kind = v.min(2);
+        }
+    });
+}
+
+/// 在线榜缓存快照（clone 出去，避免渲染时长时间持锁）。
+pub fn cloud_snapshot() -> (Vec<crate::scores::ScoreEntry>, Vec<crate::scores::ScoreEntry>, Vec<crate::scores::ScoreEntry>, u128, Option<String>) {
+    with_state(|s| {
+        (
+            s.cloud_classic.clone(),
+            s.cloud_endless.clone(),
+            s.cloud_fastest.clone(),
+            s.cloud_ms,
+            s.cloud_err.clone(),
+        )
+    })
+}
+
+pub fn cloud_store(
+    classic: Vec<crate::scores::ScoreEntry>,
+    endless: Vec<crate::scores::ScoreEntry>,
+    fastest: Vec<crate::scores::ScoreEntry>,
+    err: Option<String>,
+) {
+    let ts = now_unix_ms();
+    with_state(|s| {
+        if err.is_none() {
+            s.cloud_classic = classic;
+            s.cloud_endless = endless;
+            s.cloud_fastest = fastest;
+        }
+        s.cloud_err = err;
+        s.cloud_ms = ts;
+    });
+}
+
+/// 在线榜是否到了该刷新的时候（首次 / 超过 60s / 被新成绩标记为脏）。
+pub fn cloud_due() -> bool {
+    with_state(|s| s.cloud_ms == 0 || now_unix_ms().saturating_sub(s.cloud_ms) > 60_000)
+}
+
+/// 有新成绩上报时把刷新时刻清零，让下一拍定时任务立刻拉最新榜。
+pub fn cloud_invalidate() {
+    with_state(|s| s.cloud_ms = 0);
+}
+
+/// 是否到了该自动让手表补传一次积压成绩的时候（首次 / 距上次超过 120s）。
+pub fn auto_flush_due() -> bool {
+    with_state(|s| s.auto_flush_ms == 0 || now_unix_ms().saturating_sub(s.auto_flush_ms) > 120_000)
+}
+
+/// 记下本次自动补传时刻，作为节流基准。
+pub fn mark_auto_flush() {
+    with_state(|s| s.auto_flush_ms = now_unix_ms());
 }
 
 static STATE: OnceLock<Mutex<PluginState>> = OnceLock::new();

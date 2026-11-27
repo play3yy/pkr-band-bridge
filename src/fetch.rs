@@ -165,7 +165,7 @@ fn expected_sizes() -> HashMap<&'static str, usize> {
         ("back_atlas10_v1.png", 54079),
         ("back_atlas11_v1.png", 56106),
         ("back_atlas12_v1.png", 42349),
-        ("forms_atlas0_v1.png", 31878),
+        ("forms_atlas0_v1.png", 34413),
         ("front_atlas00_v1.png", 58949),
         ("front_atlas01_v1.png", 55422),
         ("front_atlas02_v1.png", 50593),
@@ -179,6 +179,9 @@ fn expected_sizes() -> HashMap<&'static str, usize> {
         ("front_atlas10_v1.png", 61533),
         ("front_atlas11_v1.png", 61827),
         ("front_atlas12_v1.png", 45785),
+        ("mega_atlas00_v1.png", 108470),
+        ("mega_atlas01_v1.png", 13987),
+        ("gmax_atlas00_v1.png", 48234),
         ("icon_atlas00_v1.png", 51470),
         ("icon_atlas01_v1.png", 49305),
         ("icon_atlas02_v1.png", 48763),
@@ -209,6 +212,14 @@ pub fn atlas_groups() -> &'static [(&'static str, &'static [&'static str])] {
             ],
         ),
         ("形态", &["forms_atlas0_v1.png"]),
+        (
+            "Mega",
+            &[
+                "mega_atlas00_v1.png",
+                "mega_atlas01_v1.png",
+            ],
+        ),
+        ("极巨化", &["gmax_atlas00_v1.png"]),
         (
             "正面",
             &[

@@ -207,6 +207,13 @@ def main():
                 continue
             copy_item(root_dir, dist_dir, str(item))
 
+    # 角色小图随包发布：UI 的 IMAGE 只能读包内相对路径，运行时写目录宿主读不到。
+    mon_dir = root_dir / "assets" / "mon"
+    if mon_dir.is_dir():
+        # 实测：宿主 UI 的 IMAGE 不认包内路径、不认 asset://，只认 data: 与 http(s)。
+        # 角色图改走网络精灵表（ui::mon_cell 背景裁剪），不再随包分发。
+        pass
+
     if args.package:
         package_name = make_package_name(plugin_name, crate_name)
         package_path = dist_dir / f"{package_name}.abp"

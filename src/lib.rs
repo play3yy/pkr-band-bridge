@@ -9,6 +9,8 @@ pub mod handshake;
 pub mod interconnect;
 pub mod logger;
 pub mod persist;
+pub mod mon_data;
+pub mod scores;
 pub mod state;
 pub mod stream;
 pub mod transfer;
@@ -44,11 +46,21 @@ impl event::Guest for MyPlugin {
                 for pkg in state::pkg_names() {
                     interconnect::register_for_all_devices(&pkg).await;
                 }
+                // 设备刚连上：主动让手表把离线期间积压的成绩补传上来（节流，120s 内不重复打扰）。
+                // 手表不在前台 / 未安装时命令会被拒，记日志即可，不影响本地榜。
+                if state::auto_flush_due() {
+                    state::mark_auto_flush();
+                    let _ = interconnect::dispatch_watch_command("score-flush", None).await;
+                }
                 ui::rerender().await;
             }
             event::EventType::Timer => {
                 stream::prune_idle();
                 transfer::prune_idle();
+                if scores::cloud_enabled() && state::cloud_due() {
+                    scores::maybe_refresh_cloud().await;
+                    ui::rerender().await;
+                }
             }
             event::EventType::ProviderAction
             | event::EventType::DeeplinkAction
@@ -135,6 +147,22 @@ async fn dispatch_interconnect(addr: &str, pkg: &str, data: &str) {
         }
         "pkr-sync-ack" => {
             interconnect::handle_command_ack(body_value);
+            ui::rerender().await;
+        }
+        // 局末成绩：手表每局结束（胜利 / 全灭 / 放弃）发一帧，用作排行榜数据源。
+        "pkr-score" => {
+            let device = state::connected_devices()
+                .into_iter()
+                .find(|(a, _)| a == addr)
+                .map(|(_, n)| n)
+                .unwrap_or_default();
+            if let Some(entry) = scores::ingest(addr, &device, &body_value) {
+                // 本地已落盘，再尽力推到在线榜；推失败不影响本地榜。
+                if scores::cloud_enabled() {
+                    scores::cloud_push(&entry).await;
+                    state::cloud_invalidate();
+                }
+            }
             ui::rerender().await;
         }
         // 独立状态通道：手表直发、不进文件传输队列，几十字节即时到。

@@ -30,10 +30,17 @@ pub(crate) fn bundled_atlas(file: &str) -> Option<&'static [u8]> {
         "front_atlas10_v1.png" => Some(include_bytes!("../assets/atlas/front_atlas10_v1.png")),
         "front_atlas11_v1.png" => Some(include_bytes!("../assets/atlas/front_atlas11_v1.png")),
         "front_atlas12_v1.png" => Some(include_bytes!("../assets/atlas/front_atlas12_v1.png")),
+        "mega_atlas00_v1.png" => Some(include_bytes!("../assets/atlas/mega_atlas00_v1.png")),
+        "mega_atlas01_v1.png" => Some(include_bytes!("../assets/atlas/mega_atlas01_v1.png")),
+        "gmax_atlas00_v1.png" => Some(include_bytes!("../assets/atlas/gmax_atlas00_v1.png")),
         "icon_atlas00_v1.png" => Some(include_bytes!("../assets/atlas/icon_atlas00_v1.png")),
+        "icon_atlas00_v2.png" => Some(include_bytes!("../assets/atlas/icon_atlas00_v2.png")),
         "icon_atlas01_v1.png" => Some(include_bytes!("../assets/atlas/icon_atlas01_v1.png")),
+        "icon_atlas01_v2.png" => Some(include_bytes!("../assets/atlas/icon_atlas01_v2.png")),
         "icon_atlas02_v1.png" => Some(include_bytes!("../assets/atlas/icon_atlas02_v1.png")),
+        "icon_atlas02_v2.png" => Some(include_bytes!("../assets/atlas/icon_atlas02_v2.png")),
         "icon_atlas03_v1.png" => Some(include_bytes!("../assets/atlas/icon_atlas03_v1.png")),
+        "icon_atlas03_v2.png" => Some(include_bytes!("../assets/atlas/icon_atlas03_v2.png")),
         _ => None,
     }
 }

@@ -110,6 +110,11 @@ pub async fn auto_refresh() -> bool {
     for pkg in state::pkg_names() {
         register_for_all_devices(&pkg).await;
     }
+    // 首次刷新（手表在线）时主动让手表补传离线积压成绩；与 DeviceAction 共用同一节流基准。
+    if state::auto_flush_due() {
+        state::mark_auto_flush();
+        let _ = dispatch_watch_command("score-flush", None).await;
+    }
     true
 }
 
@@ -377,7 +382,17 @@ pub fn handle_command_ack(body: Value) {
         .unwrap_or("")
         .to_string();
 
+    let action = state::with_state(|s| {
+        s.pending_commands
+            .get(&cmd_id)
+            .map(|c| c.action.clone())
+            .unwrap_or_default()
+    });
     let resolved = state::resolve_command(&cmd_id, ok, &message);
+    // 手表补传完成后，让下一拍渲染立刻重新拉云端榜，不用等 60 秒节流。
+    if action == "score-flush" && ok {
+        state::cloud_invalidate();
+    }
     let Some((action, _)) = resolved else {
         tracing::warn!("command ack for unknown cmdId: {}", cmd_id);
         return;

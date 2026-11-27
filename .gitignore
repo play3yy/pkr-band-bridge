@@ -3,3 +3,4 @@
 **/.DS_Store
 *.bak
 *.bak_*
+dist/*.abp
